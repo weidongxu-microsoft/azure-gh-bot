@@ -35,11 +35,10 @@ export = (app: Application) => {
 
       // by artifact id
       const bodyLines = context.payload.issue.body.split('\n', 256)
-      for (let line of bodyLines) {
+      for (const line of bodyLines) {
         let sdkName = undefined
         // library used
         if (line.includes(keywordLibraryUsed)) {
-          app.log("1" + line)
           const pos = line.lastIndexOf(keywordLibraryUsed) + keywordLibraryUsed.length
           const subline = line.substring(pos).trim()
           let nextPos = subline.indexOf(' ')
@@ -47,26 +46,27 @@ export = (app: Application) => {
             nextPos = subline.length
           }
           sdkName = subline.substring(0, nextPos).trim()
-          app.log("1" + sdkName + pos + nextPos)
         }
         // artifact id
         if (!sdkName && line.includes(keywordArtifactId)) {
-          app.log("2" + line)
           const pos = line.lastIndexOf(keywordLibraryUsed) + keywordLibraryUsed.length
           let nextPos = line.indexOf('</artifactId>', pos)
           if (nextPos == -1) {
             nextPos = line.length
           }
           sdkName = line.substring(pos, nextPos).trim()
-          app.log("2" + sdkName)
         }
 
         if (sdkName) {
-          app.log("3" + line)
           const label = mapArtifactId2Label.get(sdkName)
-          app.log("3" + label)
-          if (label) {
+          if (label && !labels.includes(label)) {
             labels.push(label)
+
+            app.log(`add label "${label}" via artifact id`)
+
+            if (label.startsWith('mgmt-')) {
+              labels.push('mgmt')
+            }
           }
         }
       }
@@ -93,8 +93,22 @@ export = (app: Application) => {
         })
         
         if (response.status == 200) {
-          const keyPhrases = response.data.documents[0].keyPhrases
-          app.log("key phrases: " + keyPhrases)
+          const keyPhrases: string[] = response.data.documents[0].keyPhrases
+          app.log(`key phrases found in issue body: ${keyPhrases}`)
+
+          for (const phrase of keyPhrases) {
+            const phraseLower = phrase.toLowerCase()
+            let label
+            if (phraseLower.includes('fluent') || phraseLower.includes('manager') || phraseLower.includes('management')) {
+              label = 'mgmt'
+            }
+
+            if (label && !labels.includes(label)) {
+              labels.push(label)
+
+              app.log(`add label "${label}" via key phrase "${phrase}"`)  
+            }
+          }
         }
       }
 
