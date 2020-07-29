@@ -125,8 +125,8 @@ export = (app: Application) => {
               let sampleRecommend = 'Here are code samples that might help:'
               for (const sampleInfo of matchedSampleInfos) {
                 sampleRecommend += '\n'
-                sampleRecommend += '\n' + sampleInfo.getDescription()
-                sampleRecommend += '\n' + sampleInfo.getUrl()
+                sampleRecommend += '[' + sampleInfo.getDescription() + ']'
+                sampleRecommend += '(' + sampleInfo.getUrl() + ')'
               }
 
               const issueComment = context.issue({ body: sampleRecommend })
